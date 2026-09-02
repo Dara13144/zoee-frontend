@@ -12,6 +12,53 @@ export const AuthProvider = ({ children }) => {
   // Initialize session on page load
   useEffect(() => {
     const initAuth = async () => {
+      // 0. Check URL hash parameters for OAuth redirects (e.g. #access_token=...&refresh_token=...)
+      if (window.location.hash && window.location.hash.includes('access_token=')) {
+        try {
+          const hashParams = new URLSearchParams(window.location.hash.substring(1));
+          const accessToken = hashParams.get('access_token');
+          const refreshToken = hashParams.get('refresh_token');
+
+          if (accessToken) {
+            // Decode JWT payload
+            const base64Url = accessToken.split('.')[1];
+            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+            const jsonPayload = decodeURIComponent(atob(base64).split('').map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join(''));
+            const payload = JSON.parse(jsonPayload);
+
+            if (payload && (payload.email || payload.sub)) {
+              const userMeta = payload.user_metadata || {};
+              const googleData = {
+                email: payload.email || userMeta.email,
+                displayName: userMeta.full_name || userMeta.name || payload.email?.split('@')[0] || 'Creator',
+                avatarUrl: userMeta.avatar_url || userMeta.picture || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
+                googleId: payload.sub
+              };
+
+              // Set session in Supabase client if available
+              if (supabase && refreshToken) {
+                supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken }).catch(() => {});
+              }
+
+              // Sync with backend API to auto-provision streamer profile & issue platform token
+              const res = await api.post('/auth/google', googleData);
+              if (res.success && res.data.token) {
+                localStorage.setItem('dara_auth_token', res.data.token);
+                setUser(res.data.user);
+                setStreamer(res.data.streamer);
+
+                // Clean up hash from address bar
+                window.history.replaceState(null, '', window.location.pathname + window.location.search);
+                setLoading(false);
+                return;
+              }
+            }
+          }
+        } catch (hashErr) {
+          console.warn('OAuth URL hash parsing error:', hashErr);
+        }
+      }
+
       // 1. Check if Supabase session returned from Google OAuth redirect
       if (supabase) {
         try {
@@ -37,6 +84,7 @@ export const AuthProvider = ({ children }) => {
           console.warn('Supabase session recovery error:', err);
         }
       }
+
 
       // 2. Check local JWT token
       const token = localStorage.getItem('dara_auth_token');
