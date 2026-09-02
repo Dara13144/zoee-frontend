@@ -153,9 +153,11 @@ export const AuthProvider = ({ children }) => {
     if (res.success && res.data.token) {
       localStorage.setItem('dara_auth_token', res.data.token);
       setUser(res.data.user);
+      setStreamer(res.data.streamer || null);
     }
     return res;
   };
+
 
   const logout = () => {
     localStorage.removeItem('dara_auth_token');

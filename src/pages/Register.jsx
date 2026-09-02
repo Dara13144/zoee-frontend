@@ -28,9 +28,10 @@ export default function Register() {
     try {
       const res = await register(email, username, password, displayName);
       if (res.success) {
-        navigate('/become-streamer');
+        navigate('/dashboard');
       }
     } catch (err) {
+
       setError(err.message || 'Registration failed.');
     } finally {
       setLoading(false);
