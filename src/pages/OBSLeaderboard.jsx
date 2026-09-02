@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
-import api from '../services/api';
+import api, { getApiUrl } from '../services/api';
 import { Trophy, Crown, Sparkles, Heart, Flame, Star, Shield } from 'lucide-react';
 
 export default function OBSLeaderboard() {
@@ -37,12 +37,23 @@ export default function OBSLeaderboard() {
   const fetchSupporters = async () => {
     try {
       const [streamerRes, leaderRes] = await Promise.all([
-        api.get(`/streamers/${username}`),
-        api.get(`/leaderboard/${username}?period=${period}`)
+        api.get(`/streamers/${username}`).catch(() => ({
+          success: true,
+          data: { streamer: { slug: username, profile: { display_name: username } } }
+        })),
+        api.get(`/leaderboard/${username}?period=${period}`).catch(() => ({
+          success: true,
+          data: { rankings: [] }
+        }))
       ]);
 
-      if (streamerRes.success) setStreamer(streamerRes.data.streamer);
-      if (leaderRes.success) setSupporters(leaderRes.data.rankings || []);
+      if (streamerRes?.success && streamerRes.data?.streamer) {
+        setStreamer(streamerRes.data.streamer);
+      }
+      if (leaderRes?.success && leaderRes.data) {
+        const rawList = leaderRes.data.rankings || leaderRes.data.top || [];
+        setSupporters(rawList);
+      }
     } catch (err) {
       console.error('Failed to load leaderboard overlay:', err);
     } finally {
@@ -52,9 +63,25 @@ export default function OBSLeaderboard() {
 
   useEffect(() => {
     fetchSupporters();
-    const interval = setInterval(fetchSupporters, 8000); // Auto-refresh leaderboard every 8s
-    return () => clearInterval(interval);
+    const interval = setInterval(fetchSupporters, 10000); // Polling fallback every 10s
+
+    // Connect SSE for Instant Leaderboard Updates
+    let eventSource = null;
+    try {
+      eventSource = new EventSource(getApiUrl(`/leaderboard/stream/${username}`));
+      eventSource.onmessage = () => {
+        fetchSupporters();
+      };
+    } catch (e) {
+      console.warn('SSE connection error in overlay:', e);
+    }
+
+    return () => {
+      clearInterval(interval);
+      if (eventSource) eventSource.close();
+    };
   }, [username, period]);
+
 
   if (loading && supporters.length === 0) {
     return (
