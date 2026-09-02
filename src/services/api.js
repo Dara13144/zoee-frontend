@@ -18,8 +18,11 @@ const api = axios.create({
   timeout: 20000
 });
 
-// Attach Authorization Bearer token from localStorage
+// Attach Authorization Bearer token from localStorage & clean up double slashes
 api.interceptors.request.use((config) => {
+  if (config.url && config.url.includes('//') && !config.url.startsWith('http')) {
+    config.url = config.url.replace(/\/+/g, '/');
+  }
   const token = localStorage.getItem('dara_auth_token');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
@@ -28,6 +31,7 @@ api.interceptors.request.use((config) => {
 }, (error) => {
   return Promise.reject(error);
 });
+
 
 // Normalize API error response
 api.interceptors.response.use(
