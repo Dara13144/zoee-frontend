@@ -1,0 +1,126 @@
+import React, { useState, useEffect } from 'react';
+import { useSearchParams, Link } from 'react-router-dom';
+import api from '../services/api';
+import { Search, Users, Heart, ArrowRight } from 'lucide-react';
+
+export default function StreamerSearch() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialQuery = searchParams.get('q') || '';
+  const [query, setQuery] = useState(initialQuery);
+  const [streamers, setStreamers] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchStreamers = async (q = '') => {
+    setLoading(true);
+    try {
+      const res = await api.get(`/streamers/search?q=${encodeURIComponent(q)}`);
+      if (res.success) {
+        setStreamers(res.data);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchStreamers(initialQuery);
+  }, [initialQuery]);
+
+  const handleSearch = (e) => {
+    e.preventDefault();
+    setSearchParams(query ? { q: query } : {});
+    fetchStreamers(query);
+  };
+
+  return (
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-8">
+      <div>
+        <h1 className="text-3xl font-black text-white flex items-center gap-3">
+          <Search className="w-8 h-8 text-brand-400" />
+          Explore Creators
+        </h1>
+        <p className="text-sm text-slate-400 mt-1">Find your favorite streamers and support their channel</p>
+      </div>
+
+      <form onSubmit={handleSearch} className="max-w-2xl flex gap-3">
+        <div className="relative flex-1">
+          <input
+            type="text"
+            placeholder="Search by streamer username, display name..."
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            className="w-full pl-11 pr-4 py-3 rounded-2xl bg-dark-card border border-dark-border focus:border-brand-500 text-sm text-white placeholder-slate-500 shadow-xl"
+          />
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+        </div>
+        <button
+          type="submit"
+          className="px-6 py-3 rounded-2xl font-bold text-white bg-brand-600 hover:bg-brand-500 transition-colors shadow-lg shadow-brand-500/20"
+        >
+          Search
+        </button>
+      </form>
+
+      {loading ? (
+        <div className="py-20 text-center text-slate-400 flex items-center justify-center gap-3">
+          <span className="animate-spin h-6 w-6 border-2 border-brand-500 border-t-transparent rounded-full"></span>
+          Searching creators...
+        </div>
+      ) : streamers.length === 0 ? (
+        <div className="py-20 text-center glass-card rounded-3xl p-8 border border-white/5 space-y-3">
+          <Users className="w-12 h-12 text-slate-500 mx-auto" />
+          <h3 className="text-lg font-bold text-white">No creators found</h3>
+          <p className="text-sm text-slate-400">Try searching with a different username or slug.</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {streamers.map((s) => (
+            <div
+              key={s.id}
+              className="glass-card rounded-2xl overflow-hidden border border-brand-500/20 hover:border-brand-500/50 transition-all group flex flex-col justify-between"
+            >
+              <div className="relative h-28 bg-slate-800">
+                <img
+                  src={s.profile?.banner_url || 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=800'}
+                  alt={s.slug}
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                />
+                <img
+                  src={s.profile?.avatar_url || 'https://images.unsplash.com/photo-1566492031773-4f4e44671857?w=150'}
+                  alt={s.slug}
+                  className="absolute -bottom-4 left-6 w-12 h-12 rounded-xl object-cover border-2 border-brand-500 shadow-xl"
+                />
+              </div>
+
+              <div className="p-6 pt-6 space-y-4 flex-1 flex flex-col justify-between">
+                <div>
+                  <h3 className="text-base font-bold text-white group-hover:text-brand-300 transition-colors">
+                    {s.profile?.display_name || s.slug}
+                  </h3>
+                  <p className="text-xs text-slate-400 font-mono">@{s.slug}</p>
+                  <p className="text-xs text-slate-300 mt-2 line-clamp-2">
+                    {s.profile?.bio || 'Full-time live streamer on Zoee Donation.'}
+                  </p>
+                </div>
+
+                <div className="pt-3 border-t border-white/5 flex items-center justify-between">
+                  <span className="text-xs font-mono font-bold text-accent-cyan">
+                    ${Number(s.total_received || 0).toFixed(2)} raised
+                  </span>
+                  <Link
+                    to={`/streamer/${s.slug}`}
+                    className="px-4 py-2 rounded-xl text-xs font-bold text-white bg-brand-600 hover:bg-brand-500 transition-colors flex items-center gap-1"
+                  >
+                    Donate <ArrowRight className="w-3.5 h-3.5" />
+                  </Link>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
