@@ -11,6 +11,7 @@ export default function MainLayout() {
   // Detect if current route is a public creator tip/donation page or public leaderboard
   const isTipOrLeaderboardPage =
     path.startsWith('/@') ||
+    path.startsWith('/tip/') ||
     path.startsWith('/donate/') ||
     path.startsWith('/streamer/') ||
     path.startsWith('/leaderboard-avatar/') ||

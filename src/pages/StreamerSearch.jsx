@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import api from '../services/api';
-import { Search, Users, Heart, ArrowRight } from 'lucide-react';
+import { Search, Users, Heart, ArrowRight, Zap, Copy, Check } from 'lucide-react';
 
 export default function StreamerSearch() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -9,6 +9,14 @@ export default function StreamerSearch() {
   const [query, setQuery] = useState(initialQuery);
   const [streamers, setStreamers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [copiedSlug, setCopiedSlug] = useState(null);
+
+  const handleCopyTip = (slug) => {
+    const origin = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:5173';
+    navigator.clipboard.writeText(`${origin}/tip/${slug}`);
+    setCopiedSlug(slug);
+    setTimeout(() => setCopiedSlug(null), 2500);
+  };
 
   const fetchStreamers = async (q = '') => {
     setLoading(true);
@@ -105,16 +113,41 @@ export default function StreamerSearch() {
                   </p>
                 </div>
 
-                <div className="pt-3 border-t border-white/5 flex items-center justify-between">
+                {/* Tip Link Bar */}
+                <div className="flex items-center justify-between p-2 rounded-xl bg-black/40 border border-white/5 text-[11px] font-mono text-slate-300">
+                  <span className="truncate text-slate-400">/tip/{s.slug}</span>
+                  <button
+                    type="button"
+                    onClick={() => handleCopyTip(s.slug)}
+                    className="text-brand-400 hover:text-brand-300 font-bold flex items-center gap-1 shrink-0 ml-2"
+                  >
+                    {copiedSlug === s.slug ? (
+                      <>
+                        <Check className="w-3 h-3 text-emerald-400" />
+                        <span className="text-emerald-400">Copied</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-3 h-3" />
+                        <span>Copy</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+
+                <div className="pt-3 border-t border-white/5 flex items-center justify-between gap-2">
                   <span className="text-xs font-mono font-bold text-accent-cyan">
                     ${Number(s.total_received || 0).toFixed(2)} raised
                   </span>
-                  <Link
-                    to={`/streamer/${s.slug}`}
-                    className="px-4 py-2 rounded-xl text-xs font-bold text-white bg-brand-600 hover:bg-brand-500 transition-colors flex items-center gap-1"
-                  >
-                    Donate <ArrowRight className="w-3.5 h-3.5" />
-                  </Link>
+                  <div className="flex items-center gap-1.5">
+                    <Link
+                      to={`/tip/${s.slug}`}
+                      className="px-4 py-2 rounded-xl text-xs font-bold text-white bg-brand-600 hover:bg-brand-500 transition-all flex items-center gap-1.5 shadow-md shadow-brand-500/20"
+                    >
+                      <Zap className="w-3.5 h-3.5 text-amber-300 fill-amber-300" />
+                      <span>Send Tip</span>
+                    </Link>
+                  </div>
                 </div>
               </div>
             </div>

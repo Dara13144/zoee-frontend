@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import {
   Heart,
@@ -13,7 +13,10 @@ import {
   TrendingUp,
   Volume2,
   Users,
-  Trophy
+  Trophy,
+  Copy,
+  Check,
+  Link as LinkIcon
 } from 'lucide-react';
 
 export default function Home() {
@@ -21,6 +24,8 @@ export default function Home() {
   const [leaderboard, setLeaderboard] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
+  const [copiedSlug, setCopiedSlug] = useState(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     Promise.all([
@@ -35,6 +40,22 @@ export default function Home() {
       setLoading(false);
     });
   }, []);
+
+  const handleCopyTipLink = (slug) => {
+    const origin = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:5173';
+    const link = `${origin}/tip/${slug}`;
+    navigator.clipboard.writeText(link);
+    setCopiedSlug(slug);
+    setTimeout(() => setCopiedSlug(null), 2500);
+  };
+
+  const handleQuickTipSubmit = (e) => {
+    e.preventDefault();
+    const clean = searchQuery.trim().replace(/^@/, '');
+    if (clean) {
+      navigate(`/tip/${clean}`);
+    }
+  };
 
   return (
     <div className="space-y-24 pb-16 relative overflow-hidden">
@@ -82,30 +103,35 @@ export default function Home() {
           </Link>
         </div>
 
-        {/* Quick Search */}
-        <div className="mt-12 max-w-md mx-auto">
+        {/* ⚡ Quick Tip Link Jump & Search */}
+        <div className="mt-10 max-w-xl mx-auto">
           <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              if (searchQuery.trim()) window.location.href = `/search?q=${encodeURIComponent(searchQuery)}`;
-            }}
-            className="relative group"
+            onSubmit={handleQuickTipSubmit}
+            className="relative group flex flex-col sm:flex-row items-stretch sm:items-center gap-2 p-1.5 rounded-2xl bg-dark-card/90 border border-brand-500/30 shadow-2xl focus-within:border-brand-500 transition-all"
           >
-            <input
-              type="text"
-              placeholder="Search streamer by username..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-11 pr-24 py-3.5 rounded-2xl bg-dark-card/90 border border-dark-border focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 text-sm text-white placeholder-slate-500 transition-all shadow-xl group-hover:border-brand-500/40"
-            />
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-hover:text-brand-400 transition-colors" />
-            <button
-              type="submit"
-              className="absolute right-2 top-1/2 -translate-y-1/2 px-4 py-2 rounded-xl text-xs font-bold bg-brand-600 hover:bg-brand-500 text-white transition-all hover:scale-105"
-            >
-              Search
-            </button>
+            <div className="relative flex-1 flex items-center">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-brand-400" />
+              <input
+                type="text"
+                placeholder="Enter creator username to tip (e.g. @dara_gaming)..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-11 pr-3 py-3 rounded-xl bg-transparent border-none text-sm text-white placeholder-slate-400 focus:outline-none focus:ring-0"
+              />
+            </div>
+            <div className="flex items-center gap-1.5 px-1 pb-1 sm:pb-0">
+              <button
+                type="submit"
+                className="w-full sm:w-auto px-5 py-2.5 rounded-xl text-xs font-bold bg-brand-600 hover:bg-brand-500 text-white transition-all shadow-lg shadow-brand-500/25 flex items-center justify-center gap-1.5 hover:scale-105"
+              >
+                <Zap className="w-3.5 h-3.5 text-amber-300 fill-amber-300" />
+                <span>Go to Tip Link</span>
+              </button>
+            </div>
           </form>
+          <p className="text-[11px] text-slate-400 mt-2 font-mono">
+            Direct Link Format: <span className="text-brand-400 font-bold">zoee.me/tip/@streamer</span> or <span className="text-accent-cyan font-bold">zoee.me/@streamer</span>
+          </p>
         </div>
 
         {/* Live Animated Community Ticker */}
@@ -142,6 +168,132 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      {/* ⚡ FEATURED CREATORS & DIRECT TIP LINKS SHOWCASE */}
+      {streamers && streamers.length > 0 && (
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="px-2.5 py-0.5 rounded-full bg-brand-500/20 text-brand-300 text-[10px] font-extrabold uppercase tracking-wider border border-brand-500/30 flex items-center gap-1">
+                  <Zap className="w-3 h-3 text-amber-400 fill-amber-400" />
+                  Instant Live Tipping
+                </span>
+                <span className="text-xs text-slate-400 font-mono">Realtime Bakong & PayWay</span>
+              </div>
+              <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight">Featured Creators & Tip Links</h2>
+              <p className="text-xs sm:text-sm text-slate-400">Click any creator's tip link to send instant tips, messages, and TTS alerts</p>
+            </div>
+
+            <Link
+              to="/search"
+              className="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-xs font-bold text-slate-300 border border-white/10 hover:border-brand-500/40 transition-all flex items-center gap-1.5"
+            >
+              <span>Explore All Creators</span>
+              <ArrowRight className="w-3.5 h-3.5 text-brand-400" />
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {streamers.slice(0, 6).map((s) => (
+              <div
+                key={s.id}
+                className="glass-card rounded-3xl overflow-hidden border border-brand-500/25 hover:border-brand-500/60 transition-all duration-300 group flex flex-col justify-between hover:shadow-[0_15px_35px_rgba(139,92,246,0.2)] bg-[#121420]/90 backdrop-blur-xl"
+              >
+                <div>
+                  {/* Banner */}
+                  <div className="relative h-32 bg-slate-800 overflow-hidden">
+                    <img
+                      src={s.profile?.banner_url || 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=800'}
+                      alt={s.slug}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#121420] via-transparent to-black/30"></div>
+                    
+                    {/* Avatar */}
+                    <div className="absolute -bottom-4 left-6">
+                      <div className="relative w-14 h-14 rounded-2xl overflow-hidden border-2 border-brand-500 shadow-xl bg-dark-card">
+                        <img
+                          src={s.profile?.avatar_url || '/zoee-avatar.png'}
+                          alt={s.slug}
+                          className="w-full h-full object-cover"
+                          onError={(e) => { e.currentTarget.src = '/zoee-avatar.png'; }}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Status Badge */}
+                    <div className="absolute top-3 right-3 flex items-center gap-1 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-md border border-white/10 text-[10px] font-bold text-emerald-400">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                      Accepting Tips
+                    </div>
+                  </div>
+
+                  {/* Profile info */}
+                  <div className="p-6 pt-7 space-y-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <h3 className="text-base font-bold text-white group-hover:text-brand-300 transition-colors flex items-center gap-1.5">
+                          {s.profile?.display_name || s.slug}
+                        </h3>
+                        <p className="text-xs text-brand-400 font-mono font-semibold">@{s.slug}</p>
+                      </div>
+                      <span className="text-xs font-mono font-bold text-accent-cyan bg-accent-cyan/10 px-2.5 py-1 rounded-lg border border-accent-cyan/20">
+                        ${Number(s.total_received || 0).toFixed(2)}
+                      </span>
+                    </div>
+
+                    <p className="text-xs text-slate-300 line-clamp-2 leading-relaxed">
+                      {s.profile?.bio || 'Full-time streamer on Zoee Donation. Support the stream with live alerts!'}
+                    </p>
+
+                    {/* Tip Link Pill */}
+                    <div className="flex items-center justify-between p-2 rounded-xl bg-black/40 border border-white/5 text-[11px] font-mono text-slate-300">
+                      <span className="truncate text-slate-400">/tip/{s.slug}</span>
+                      <button
+                        type="button"
+                        onClick={() => handleCopyTipLink(s.slug)}
+                        className="text-brand-400 hover:text-brand-300 font-bold flex items-center gap-1 shrink-0 ml-2"
+                      >
+                        {copiedSlug === s.slug ? (
+                          <>
+                            <Check className="w-3 h-3 text-emerald-400" />
+                            <span className="text-emerald-400">Copied</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="w-3 h-3" />
+                            <span>Copy</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Card Actions */}
+                <div className="p-6 pt-0 border-t border-white/5 flex items-center gap-2 mt-4">
+                  <Link
+                    to={`/tip/${s.slug}`}
+                    className="flex-1 py-2.5 rounded-xl text-xs font-bold text-white bg-brand-600 hover:bg-brand-500 transition-all flex items-center justify-center gap-1.5 shadow-lg shadow-brand-500/25 hover:scale-[1.02]"
+                  >
+                    <Zap className="w-3.5 h-3.5 text-amber-300 fill-amber-300" />
+                    <span>Send Tip</span>
+                  </Link>
+
+                  <Link
+                    to={`/leaderboard-avatar/${s.slug}`}
+                    className="px-3 py-2.5 rounded-xl text-xs font-bold text-slate-300 glass-card hover:bg-white/10 hover:border-amber-500/40 transition-all flex items-center justify-center gap-1"
+                    title="View Leaderboard"
+                  >
+                    <Trophy className="w-3.5 h-3.5 text-amber-400" />
+                  </Link>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Feature Highlights */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">

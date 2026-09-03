@@ -1,10 +1,22 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Heart, Sparkles, Zap, Star, Music } from 'lucide-react';
+import { Heart, Sparkles, Zap, Star, Music, Disc, Video, Radio, Volume2 } from 'lucide-react';
 import soundService from '../services/soundService';
 import ttsService from '../services/ttsService';
 import api, { getApiUrl } from '../services/api';
+
+function getYouTubeId(url) {
+  if (!url) return null;
+  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=|shorts\/)([^#&?]*).*/;
+  const match = url.match(regExp);
+  return (match && match[2].length === 11) ? match[2] : null;
+}
+
+function isAudioFile(url) {
+  if (!url) return false;
+  return /\.(mp3|wav|ogg|m4a|aac)($|\?)/i.test(url);
+}
 
 
 // ─── Animation Variants ──────────────────────────────────────────────────────
@@ -135,7 +147,10 @@ function CountdownBar({ durationSec, playing }) {
 // ─── Alert Card ───────────────────────────────────────────────────────────────
 function AlertCard({ alertData, alertSettings, streamer, animation = 'neon', onDone }) {
   const [burst, setBurst] = useState(true);
-  const durationSec = alertSettings?.duration || 8;
+  const youtubeId = getYouTubeId(alertData.media_url);
+  const durationSec = alertData.media_url
+    ? Math.max(alertSettings?.duration || 12, 18)
+    : (alertSettings?.duration || 8);
   const formattedAmount = alertData.currency === 'KHR'
     ? `${Number(alertData.amount).toLocaleString()} ៛`
     : `$${Number(alertData.amount).toFixed(2)}`;
@@ -284,6 +299,59 @@ function AlertCard({ alertData, alertSettings, streamer, animation = 'neon', onD
             </motion.div>
           )}
 
+          {/* 🎵 Song Request (Media Share) Live Player */}
+          {alertData.media_url && (
+            <motion.div
+              className="p-3 rounded-2xl border border-accent-cyan/40 bg-black/60 backdrop-blur-md shadow-xl space-y-2 relative overflow-hidden"
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              transition={{ delay: 0.35, duration: 0.4 }}
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="relative w-8 h-8 rounded-full bg-gradient-to-tr from-accent-cyan via-brand-500 to-accent-fuchsia p-0.5 animate-spin-slow shrink-0">
+                    <div className="w-full h-full rounded-full bg-[#0d101d] flex items-center justify-center">
+                      <Disc className="w-4 h-4 text-accent-cyan" />
+                    </div>
+                  </div>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-1.5 text-accent-cyan text-[10px] font-black uppercase tracking-wider">
+                      <Music className="w-3 h-3 animate-pulse" />
+                      <span>Live Song Playing</span>
+                    </div>
+                    <p className="text-xs font-bold text-white truncate max-w-[260px]">
+                      {youtubeId ? `YouTube Track (ID: ${youtubeId})` : alertData.media_url}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Animated Audio Equalizer Bars */}
+                <div className="flex items-end gap-1 h-5 px-1 shrink-0">
+                  <span className="w-1 bg-accent-cyan rounded-full animate-pulse h-3"></span>
+                  <span className="w-1 bg-brand-400 rounded-full animate-pulse h-5" style={{ animationDelay: '0.15s' }}></span>
+                  <span className="w-1 bg-accent-fuchsia rounded-full animate-pulse h-4" style={{ animationDelay: '0.3s' }}></span>
+                  <span className="w-1 bg-emerald-400 rounded-full animate-pulse h-2" style={{ animationDelay: '0.45s' }}></span>
+                  <span className="w-1 bg-amber-400 rounded-full animate-pulse h-4" style={{ animationDelay: '0.2s' }}></span>
+                </div>
+              </div>
+
+              {/* YouTube Autoplay Embed or HTML5 Audio */}
+              {youtubeId ? (
+                <div className="w-full h-28 rounded-xl overflow-hidden border border-white/10 relative shadow-inner">
+                  <iframe
+                    className="w-full h-full"
+                    src={`https://www.youtube.com/embed/${youtubeId}?autoplay=1&mute=0&controls=1&loop=1&playlist=${youtubeId}&origin=${typeof window !== 'undefined' ? window.location.origin : ''}`}
+                    title="Live Requested Song"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  />
+                </div>
+              ) : isAudioFile(alertData.media_url) ? (
+                <audio autoPlay src={alertData.media_url} />
+              ) : null}
+            </motion.div>
+          )}
+
           {/* Footer */}
           <motion.div
             className="flex items-center justify-between pt-1"
@@ -366,7 +434,9 @@ export default function OBSAlert() {
     const settings = nextAlert._settings;
     const soundPreset = settings?.sound_url || 'chime';
     const volume = settings?.sound_volume ?? 0.85;
-    const durationSec = settings?.duration || 8;
+    const durationSec = nextAlert.media_url
+      ? Math.max(settings?.duration || 12, 18)
+      : (settings?.duration || 8);
 
     // Play sound
     soundService.playSound(soundPreset, volume);

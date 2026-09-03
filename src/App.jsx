@@ -52,7 +52,10 @@ export default function App() {
             <Route path="login" element={<Login />} />
             <Route path="register" element={<Register />} />
             
-            {/* Public Creator Donation Pages */}
+            {/* Public Creator Donation & Tip Pages */}
+            <Route path="tip" element={<StreamerSearch />} />
+            <Route path="tip/:username" element={<PublicDonationPage />} />
+            <Route path="tip/@:username" element={<PublicDonationPage />} />
             <Route path="donate/:username" element={<PublicDonationPage />} />
             <Route path="streamer/:username" element={<PublicDonationPage />} />
             <Route path="@:username" element={<PublicDonationPage />} />

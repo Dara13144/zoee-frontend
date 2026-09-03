@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import api from '../services/api';
-import ttsService from '../services/ttsService';
 import PaymentModal from '../components/PaymentModal';
 import {
   Heart,
@@ -10,7 +9,6 @@ import {
   Check,
   Sparkles,
   ShieldCheck,
-  Volume2,
   User,
   MessageSquare,
   AlertCircle,
@@ -19,8 +17,20 @@ import {
   ExternalLink,
   Flame,
   Trophy,
-  CheckCircle2
+  CheckCircle2,
+  Music,
+  Disc,
+  Play,
+  Radio,
+  Video
 } from 'lucide-react';
+
+export function getYouTubeId(url) {
+  if (!url) return null;
+  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=|shorts\/)([^#&?]*).*/;
+  const match = url.match(regExp);
+  return (match && match[2].length === 11) ? match[2] : null;
+}
 
 const PRESET_AMOUNTS_USD = [1, 5, 10, 20, 50, 100];
 const PRESET_AMOUNTS_KHR = [4000, 20000, 40000, 80000, 200000, 400000];
@@ -46,8 +56,8 @@ export default function PublicDonationPage() {
   const [anonymous, setAnonymous] = useState(false);
   const [message, setMessage] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('CUTLUY');
-  const [selectedVoice, setSelectedVoice] = useState('khmer_natural');
-  const [isPlayingTTS, setIsPlayingTTS] = useState(false);
+  const [enableSong, setEnableSong] = useState(false);
+  const [songUrl, setSongUrl] = useState('');
 
   // Modal states
   const [submitting, setSubmitting] = useState(false);
@@ -55,10 +65,10 @@ export default function PublicDonationPage() {
   const [showShareModal, setShowShareModal] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
 
-  // Dynamic share URL
+  // Dynamic share URL - Official Tip Link
   const publicShareUrl = typeof window !== 'undefined'
-    ? `${window.location.origin}/@${username}`
-    : `https://zoeedonate.com/@${username}`;
+    ? `${window.location.origin}/tip/${username}`
+    : `https://zoeedonate.com/tip/${username}`;
 
   useEffect(() => {
     setLoading(true);
@@ -106,21 +116,6 @@ export default function PublicDonationPage() {
     }
   };
 
-  const handlePreviewTTS = () => {
-    ttsService.stop();
-    setIsPlayingTTS(true);
-    setTimeout(() => {
-      ttsService.speak({
-        text: message || (currency === 'KHR' ? 'សួស្តីបង! ជូនពរសំណាងល្អ និងជោគជ័យក្នុងការផ្សាយផ្ទាល់!' : 'Keep up the amazing stream! Great gameplay!'),
-        donorName: anonymous ? 'Anonymous' : (donorName || (currency === 'KHR' ? 'អ្នកគាំទ្រ' : 'A fan')),
-        amount: amount || (currency === 'KHR' ? '20000' : '5'),
-        currency,
-        voice: selectedVoice,
-        minAmount: 0
-      });
-      setTimeout(() => setIsPlayingTTS(false), 3800);
-    }, 150);
-  };
 
   const handleCreateDonation = async (e) => {
     e.preventDefault();
@@ -147,7 +142,8 @@ export default function PublicDonationPage() {
         donorName: anonymous ? 'Anonymous' : (donorName || 'Supporter'),
         anonymous,
         message,
-        paymentMethod
+        paymentMethod,
+        mediaUrl: enableSong && songUrl.trim() ? songUrl.trim() : null
       });
 
       if (res.success && res.data) {
@@ -267,7 +263,21 @@ export default function PublicDonationPage() {
           </div>
 
           {/* Quick Actions (Share & Leaderboard) */}
+          {/* Quick Actions (Copy Tip Link, Share & Leaderboard) */}
           <div className="flex sm:flex-col items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={handleCopyLink}
+              className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all shadow-sm ${
+                copiedLink
+                  ? 'bg-emerald-500 text-white shadow-emerald-500/30'
+                  : 'bg-brand-600 hover:bg-brand-500 text-white shadow-brand-500/25 hover:scale-105'
+              }`}
+            >
+              {copiedLink ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+              <span>{copiedLink ? 'Tip Link Copied!' : 'Copy Tip Link'}</span>
+            </button>
+
             <button
               type="button"
               onClick={() => setShowShareModal(true)}
@@ -428,19 +438,19 @@ export default function PublicDonationPage() {
               </div>
             </div>
 
-            {/* Step 3: Message with Voice AI Readout */}
+            {/* Step 3: Message for Streamer */}
             <div className="space-y-3.5">
               <div className="flex items-center justify-between">
                 <label className="text-xs font-black text-white uppercase tracking-wider flex items-center gap-1.5">
                   <span className="w-5 h-5 rounded-lg bg-brand-500/20 text-brand-300 flex items-center justify-center text-[10px] font-bold">3</span>
-                  Message for Streamer (Voice AI Alert)
+                  Message for Streamer
                 </label>
                 <span className="text-[10px] text-slate-500 font-mono">{message.length}/255</span>
               </div>
 
               <textarea
                 rows={3}
-                placeholder="Cheer on your streamer! (Voice AI will read your message live on stream)"
+                placeholder="Cheer on your streamer! (Leave your message here)"
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 maxLength={255}
@@ -466,36 +476,93 @@ export default function PublicDonationPage() {
                   </button>
                 ))}
               </div>
+            </div>
 
-              {/* Voice AI Selector & Preview */}
-              <div className="p-3 rounded-2xl bg-[#1E2128] border border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-                <div className="flex items-center gap-2">
-                  <span className="text-[11px] font-semibold text-slate-300">Voice AI:</span>
-                  <select
-                    value={selectedVoice}
-                    onChange={(e) => setSelectedVoice(e.target.value)}
-                    className="px-2.5 py-1 rounded-xl bg-dark-card border border-white/10 text-xs text-white focus:border-accent-cyan font-semibold"
-                  >
-                    <option value="khmer_natural">🇰🇭 ស្វ័យប្រវត្ត (Khmer & English Auto)</option>
-                    <option value="khmer_female">🇰🇭 ស្រីពៅ (Khmer Female)</option>
-                    <option value="khmer_male">🇰🇭 ពិសិដ្ឋ (Khmer Male)</option>
-                    <option value="en_natural">🇺🇸 English US Natural AI</option>
-                  </select>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={handlePreviewTTS}
-                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-bold transition-all shadow-md ${
-                    isPlayingTTS
-                      ? 'bg-accent-cyan text-black shadow-cyan-500/30'
-                      : 'bg-brand-500/20 hover:bg-brand-500/30 text-brand-300 border border-brand-500/30'
-                  }`}
-                >
-                  <Volume2 className="w-3.5 h-3.5" />
-                  {isPlayingTTS ? 'Playing...' : 'Test Voice Audio'}
-                </button>
+            {/* Step 4: Song Request (Media Share) for Live Stream */}
+            <div className="space-y-3.5 p-4 rounded-3xl bg-[#171924] border border-brand-500/20 shadow-md">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-black text-white uppercase tracking-wider flex items-center gap-2">
+                  <div className="w-6 h-6 rounded-lg bg-accent-cyan/20 text-accent-cyan flex items-center justify-center text-xs">
+                    <Music className="w-3.5 h-3.5" />
+                  </div>
+                  <span>Song Request / Media Share</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer text-xs text-accent-cyan font-bold select-none">
+                  <input
+                    type="checkbox"
+                    checked={enableSong}
+                    onChange={(e) => setEnableSong(e.target.checked)}
+                    className="w-4 h-4 rounded border-dark-border bg-dark-surface text-accent-cyan focus:ring-accent-cyan"
+                  />
+                  <span>Attach Song to Tip</span>
+                </label>
               </div>
+
+              {enableSong && (
+                <div className="space-y-3 animate-in fade-in slide-in-from-top-2 duration-200">
+                  <p className="text-[11px] text-slate-300">
+                    Paste a YouTube music URL or song name. The song will automatically play live on the streamer's OBS broadcast with your donation!
+                  </p>
+
+                  <div className="relative">
+                    <input
+                      type="text"
+                      placeholder="Paste YouTube URL (e.g. https://www.youtube.com/watch?v=...) or Song Title"
+                      value={songUrl}
+                      onChange={(e) => setSongUrl(e.target.value)}
+                      className="w-full pl-10 pr-4 py-2.5 rounded-2xl bg-[#1E2128] border border-white/10 text-xs text-white placeholder-slate-500 focus:border-accent-cyan transition-all"
+                    />
+                    <Video className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  </div>
+
+                  {/* Quick Preset Songs */}
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <span className="text-[10px] text-slate-400 font-mono">Popular Tracks:</span>
+                    {[
+                      { label: '🇰🇭 Vannda - Time To Rise', url: 'https://www.youtube.com/watch?v=kJQP7kiw5Fk' },
+                      { label: '🇰🇭 G-Devith - Tep Phnor', url: 'https://www.youtube.com/watch?v=fJ9rUzIMcZQ' },
+                      { label: '✨ Cosmic Lo-Fi Chime', url: 'https://www.youtube.com/watch?v=jfKfPfyJRdk' },
+                      { label: '🔥 Epic Theme', url: 'https://www.youtube.com/watch?v=kJQP7kiw5Fk' }
+                    ].map((song, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => setSongUrl(song.url)}
+                        className={`text-[10px] px-2.5 py-1 rounded-lg border transition-all active:scale-95 ${
+                          songUrl === song.url
+                            ? 'bg-accent-cyan/20 border-accent-cyan text-accent-cyan font-bold'
+                            : 'bg-white/5 hover:bg-white/10 text-slate-300 border-white/10'
+                        }`}
+                      >
+                        {song.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* YouTube Live Thumbnail Preview */}
+                  {getYouTubeId(songUrl) && (
+                    <div className="flex items-center gap-3 p-2.5 rounded-2xl bg-black/40 border border-brand-500/30">
+                      <img
+                        src={`https://img.youtube.com/vi/${getYouTubeId(songUrl)}/mqdefault.jpg`}
+                        alt="Song Thumbnail"
+                        className="w-16 h-12 rounded-xl object-cover shadow"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1.5 text-accent-cyan text-[11px] font-bold">
+                          <Disc className="w-3.5 h-3.5 animate-spin-slow" />
+                          <span>YouTube Song Attached</span>
+                        </div>
+                        <p className="text-[10px] text-slate-400 font-mono truncate">
+                          Video ID: {getYouTubeId(songUrl)}
+                        </p>
+                      </div>
+                      <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+                        Ready to Stream
+                      </span>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Submit Button */}

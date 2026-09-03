@@ -1,17 +1,27 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { Heart, Search, Shield, LayoutDashboard, LogOut, User, Menu, X, Sparkles, PlusCircle } from 'lucide-react';
+import { Heart, Search, Shield, LayoutDashboard, LogOut, User, Menu, X, Sparkles, PlusCircle, Zap, Copy, Check } from 'lucide-react';
 
 export default function Navbar() {
   const { user, streamer, isAuthenticated, isAdmin, isStreamer, logout } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
+  const [copiedMyTip, setCopiedMyTip] = useState(false);
   const navigate = useNavigate();
 
   const handleLogout = () => {
     logout();
     navigate('/');
+  };
+
+  const handleCopyMyTip = (e) => {
+    e.stopPropagation();
+    const slug = streamer?.slug || user?.username;
+    const origin = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:5173';
+    navigator.clipboard.writeText(`${origin}/tip/${slug}`);
+    setCopiedMyTip(true);
+    setTimeout(() => setCopiedMyTip(false), 2000);
   };
 
   return (
@@ -38,10 +48,18 @@ export default function Navbar() {
           </Link>
 
           {/* Center Links */}
-          <div className="hidden md:flex items-center gap-6">
+          <div className="hidden md:flex items-center gap-4">
             <Link to="/search" className="flex items-center gap-1.5 text-sm font-medium text-slate-300 hover:text-white hover:bg-white/5 px-3 py-1.5 rounded-lg transition-colors">
               <Search className="w-4 h-4 text-brand-400" />
               Explore Creators
+            </Link>
+
+            <Link
+              to="/tip"
+              className="flex items-center gap-1.5 text-xs font-bold text-amber-300 hover:text-amber-200 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 px-3 py-1.5 rounded-xl transition-all shadow-sm hover:scale-105"
+            >
+              <Zap className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
+              <span>Send a Tip</span>
             </Link>
           </div>
 
@@ -78,13 +96,28 @@ export default function Navbar() {
                     </div>
 
                     {isStreamer ? (
-                      <Link
-                        to="/dashboard"
-                        className="flex items-center gap-2 px-4 py-2 text-sm text-slate-200 hover:bg-brand-500/20 hover:text-brand-300"
-                      >
-                        <LayoutDashboard className="w-4 h-4 text-brand-400" />
-                        Streamer Dashboard
-                      </Link>
+                      <>
+                        <Link
+                          to="/dashboard"
+                          className="flex items-center gap-2 px-4 py-2 text-sm text-slate-200 hover:bg-brand-500/20 hover:text-brand-300"
+                        >
+                          <LayoutDashboard className="w-4 h-4 text-brand-400" />
+                          Streamer Dashboard
+                        </Link>
+                        <button
+                          type="button"
+                          onClick={handleCopyMyTip}
+                          className="w-full flex items-center justify-between px-4 py-2 text-xs text-amber-300 hover:bg-amber-500/15 transition-colors text-left font-semibold"
+                        >
+                          <span className="flex items-center gap-2">
+                            <Zap className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
+                            Copy My Tip Link
+                          </span>
+                          <span className="text-[10px] font-mono text-slate-400 font-bold">
+                            {copiedMyTip ? 'Copied! ✅' : 'Copy'}
+                          </span>
+                        </button>
+                      </>
                     ) : (
                       <Link
                         to="/become-streamer"
@@ -156,16 +189,38 @@ export default function Navbar() {
             Explore Creators
           </Link>
 
+          <Link
+            to="/tip"
+            onClick={() => setMobileMenuOpen(false)}
+            className="flex items-center gap-2 px-3 py-2 rounded-lg text-amber-300 bg-amber-500/10 font-bold"
+          >
+            <Zap className="w-4 h-4 text-amber-400 fill-amber-400" />
+            Send a Tip
+          </Link>
+
           {isAuthenticated ? (
             <>
               {isStreamer && (
-                <Link
-                  to="/dashboard"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="block px-3 py-2 rounded-lg text-brand-300 bg-brand-500/10 font-semibold"
-                >
-                  Streamer Dashboard
-                </Link>
+                <>
+                  <Link
+                    to="/dashboard"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="block px-3 py-2 rounded-lg text-brand-300 bg-brand-500/10 font-semibold"
+                  >
+                    Streamer Dashboard
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={handleCopyMyTip}
+                    className="w-full text-left px-3 py-2 rounded-lg text-amber-300 hover:bg-amber-500/10 text-xs font-semibold flex items-center justify-between"
+                  >
+                    <span className="flex items-center gap-1.5">
+                      <Zap className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
+                      Copy My Tip Link
+                    </span>
+                    <span className="font-mono text-[10px] text-slate-400">{copiedMyTip ? 'Copied!' : 'Copy'}</span>
+                  </button>
+                </>
               )}
               {isAdmin && (
                 <Link

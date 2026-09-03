@@ -1,6 +1,24 @@
 import axios from 'axios';
 
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || 'https://zoee-backend.onrender.com/api';
+// Dynamic API Base URL resolution for both local development and cloud hosting
+export const API_BASE_URL = (() => {
+  const envUrl = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL;
+  if (envUrl && typeof envUrl === 'string' && envUrl.trim() !== '') {
+    return envUrl.trim().replace(/\/+$/, '');
+  }
+
+  // When running in browser
+  if (typeof window !== 'undefined') {
+    const hostname = window.location.hostname;
+    // If local dev environment
+    if (hostname === 'localhost' || hostname === '127.0.0.1') {
+      return 'http://localhost:5005/api';
+    }
+  }
+
+  // Default live backend on cloud hosting (Render)
+  return 'https://zoee-backend.onrender.com/api';
+})();
 
 export const getApiUrl = (path = '') => {
   const cleanPath = path.startsWith('/') ? path : `/${path}`;
