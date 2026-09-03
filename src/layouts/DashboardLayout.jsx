@@ -72,6 +72,16 @@ export default function DashboardLayout() {
 
           <div className="flex flex-wrap items-center gap-2">
             <a
+              href={`/tip/${streamerSlug}`}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-brand-600 to-accent-fuchsia hover:brightness-110 shadow-lg shadow-brand-500/25 transition-all"
+              title={`Open Test Tip page for @${streamerSlug}`}
+            >
+              <ExternalLink className="w-3.5 h-3.5 text-cyan-300" />
+              <span>Test Tip</span>
+            </a>
+            <a
               href={`/@${streamerSlug}`}
               target="_blank"
               rel="noreferrer"
@@ -93,9 +103,9 @@ export default function DashboardLayout() {
               href={`/alert/${streamerSlug}`}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-brand-600 to-accent-fuchsia hover:brightness-110 shadow-lg shadow-brand-500/20 transition-all"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-slate-200 bg-white/5 hover:bg-white/10 border border-white/10 transition-all"
             >
-              <Radio className="w-3.5 h-3.5 animate-pulse" />
+              <Radio className="w-3.5 h-3.5 text-accent-cyan animate-pulse" />
               OBS Overlay
             </a>
           </div>

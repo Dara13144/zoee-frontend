@@ -20,7 +20,8 @@ import {
   AlertCircle,
   Music,
   Disc,
-  Video
+  Video,
+  ExternalLink
 } from 'lucide-react';
 
 export default function AlertSettings() {
@@ -208,7 +209,17 @@ export default function AlertSettings() {
               <p className="text-xs text-slate-400">Add as a Browser Source (Width: 800, Height: 600, 100% Transparent)</p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <a
+              href={`/tip/${identifier}`}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-accent-cyan to-brand-600 hover:brightness-110 shadow-lg transition-all shrink-0"
+              title={`Open Test Tip page for @${identifier}`}
+            >
+              <ExternalLink className="w-3.5 h-3.5" />
+              <span>Test Tip</span>
+            </a>
             <button
               type="button"
               onClick={handleSendTestAlert}

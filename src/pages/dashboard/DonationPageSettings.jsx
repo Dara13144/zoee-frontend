@@ -199,6 +199,16 @@ export default function DonationPageSettings() {
         </div>
 
         <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto">
+          <a
+            href={`/tip/${streamerSlug}`}
+            target="_blank"
+            rel="noreferrer"
+            className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-accent-cyan to-brand-600 hover:brightness-110 text-xs font-bold text-white flex items-center justify-center gap-1.5 transition-all shadow-md"
+            title={`Open Test Tip page for @${streamerSlug}`}
+          >
+            <ExternalLink className="w-3.5 h-3.5" />
+            <span>Test Tip</span>
+          </a>
           <button
             type="button"
             onClick={() => copyPublicUrl(publicDonateUrl)}

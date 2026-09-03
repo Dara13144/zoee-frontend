@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { Heart, Search, Shield, LayoutDashboard, LogOut, User, Menu, X, Sparkles, PlusCircle, Zap, Copy, Check } from 'lucide-react';
+import { Heart, Search, Shield, LayoutDashboard, LogOut, User, Menu, X, Sparkles, PlusCircle, Zap, Copy, Check, ExternalLink } from 'lucide-react';
 
 export default function Navbar() {
   const { user, streamer, isAuthenticated, isAdmin, isStreamer, logout } = useAuth();
@@ -23,6 +23,8 @@ export default function Navbar() {
     setCopiedMyTip(true);
     setTimeout(() => setCopiedMyTip(false), 2000);
   };
+
+  const streamerSlug = streamer?.slug || user?.username;
 
   return (
     <nav className="sticky top-0 z-50 glass-panel border-b border-white/10 bg-[#090a0f]/80 backdrop-blur-xl">
@@ -61,6 +63,19 @@ export default function Navbar() {
               <Zap className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
               <span>Send a Tip</span>
             </Link>
+
+            {isStreamer && streamerSlug && (
+              <a
+                href={`/tip/${streamerSlug}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hidden lg:flex items-center gap-1.5 text-xs font-bold text-cyan-300 hover:text-cyan-200 bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/30 px-3 py-1.5 rounded-xl transition-all shadow-sm hover:scale-105"
+                title={`Open Test Tip page for @${streamerSlug}`}
+              >
+                <ExternalLink className="w-3.5 h-3.5 text-cyan-400" />
+                <span>Test Tip</span>
+              </a>
+            )}
           </div>
 
           {/* Right Action buttons */}
@@ -104,6 +119,18 @@ export default function Navbar() {
                           <LayoutDashboard className="w-4 h-4 text-brand-400" />
                           Streamer Dashboard
                         </Link>
+                        <a
+                          href={`/tip/${streamerSlug}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="w-full flex items-center justify-between px-4 py-2 text-xs text-cyan-300 hover:bg-cyan-500/15 transition-colors text-left font-semibold"
+                        >
+                          <span className="flex items-center gap-2">
+                            <ExternalLink className="w-3.5 h-3.5 text-cyan-400" />
+                            Test Tip
+                          </span>
+                          <span className="text-[10px] font-mono text-slate-400 font-bold">Open ↗</span>
+                        </a>
                         <button
                           type="button"
                           onClick={handleCopyMyTip}
@@ -209,6 +236,19 @@ export default function Navbar() {
                   >
                     Streamer Dashboard
                   </Link>
+                  <a
+                    href={`/tip/${streamerSlug}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="w-full text-left px-3 py-2 rounded-lg text-cyan-300 hover:bg-cyan-500/10 text-xs font-semibold flex items-center justify-between"
+                  >
+                    <span className="flex items-center gap-1.5">
+                      <ExternalLink className="w-3.5 h-3.5 text-cyan-400" />
+                      Test Tip Page
+                    </span>
+                    <span className="font-mono text-[10px] text-slate-400">Open ↗</span>
+                  </a>
                   <button
                     type="button"
                     onClick={handleCopyMyTip}
