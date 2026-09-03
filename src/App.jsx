@@ -68,6 +68,11 @@ export default function App() {
 
           {/* Standalone OBS Browser Source Overlays (Clean, Transparent) */}
           <Route path="/alert/:username" element={<OBSAlert />} />
+          <Route path="/alert/@:username" element={<OBSAlert />} />
+          <Route path="/overlay/alert/:username" element={<OBSAlert />} />
+          <Route path="/overlay/alert/@:username" element={<OBSAlert />} />
+          <Route path="/widget/alert/:username" element={<OBSAlert />} />
+          <Route path="/widget/alert/@:username" element={<OBSAlert />} />
           <Route path="/overlay/supporters/:username" element={<OBSLeaderboard />} />
           <Route path="/overlay/leaderboard/:username" element={<OBSLeaderboard />} />
           <Route path="/widget/supporters/:username" element={<OBSLeaderboard />} />

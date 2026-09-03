@@ -244,6 +244,16 @@ export default function AlertSettings() {
             {copied ? <Check className="w-4 h-4 text-accent-emerald" /> : <Copy className="w-4 h-4" />}
             {copied ? 'Copied' : 'Copy Alert URL'}
           </button>
+          <a
+            href={obsUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="px-3.5 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 transition-colors border border-white/10 flex items-center gap-1.5 shrink-0 ml-1.5"
+            title="Preview Live Alert Overlay in new tab"
+          >
+            <Eye className="w-4 h-4 text-accent-cyan" />
+            <span className="text-xs font-bold hidden sm:inline">Preview</span>
+          </a>
         </div>
       </div>
 

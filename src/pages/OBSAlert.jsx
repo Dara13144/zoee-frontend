@@ -386,9 +386,23 @@ function AlertCard({ alertData, alertSettings, streamer, animation = 'neon', onD
 
 // ─── Main OBSAlert Component ──────────────────────────────────────────────────
 export default function OBSAlert() {
-  const { username } = useParams();
+  const { username: rawUsername } = useParams();
   const [searchParams] = useSearchParams();
+  const username = (rawUsername || '').replace(/^@/, '');
   const token = searchParams.get('token') || username;
+  const position = searchParams.get('pos') || 'center';
+
+  const positionClasses = (() => {
+    switch (position) {
+      case 'bottom-left': return 'items-end justify-start p-8';
+      case 'bottom-right': return 'items-end justify-end p-8';
+      case 'top-center': return 'items-start justify-center p-8';
+      case 'top-left': return 'items-start justify-start p-8';
+      case 'top-right': return 'items-start justify-end p-8';
+      case 'center':
+      default: return 'items-center justify-center p-6';
+    }
+  })();
 
   const [alertSettings, setAlertSettings] = useState(null);
   const [streamer, setStreamer] = useState(null);
@@ -598,7 +612,7 @@ export default function OBSAlert() {
       </div>
 
       {/* Main Alert Popup Area */}
-      <div className="absolute inset-0 flex items-end justify-start p-8 pointer-events-none">
+      <div className={`absolute inset-0 flex ${positionClasses} pointer-events-none`}>
         <AnimatePresence mode="wait">
           {currentAlert && (
             <AlertCard
