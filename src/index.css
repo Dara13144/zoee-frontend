@@ -9,6 +9,18 @@
   }
 }
 
+/* 100% True Transparent Background for OBS Studio & Streamlabs Overlays */
+body.obs-overlay,
+html.obs-overlay,
+body.obs-overlay #root,
+html.obs-overlay #root,
+.obs-overlay body,
+.obs-overlay #root {
+  background: transparent !important;
+  background-color: transparent !important;
+  overflow: hidden !important;
+}
+
 /* Glassmorphism card utilities */
 .glass-panel {
   background: rgba(22, 25, 43, 0.7);

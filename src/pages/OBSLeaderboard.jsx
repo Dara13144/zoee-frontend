@@ -23,14 +23,20 @@ export default function OBSLeaderboard() {
 
   // Set 100% transparent body & html for OBS
   useEffect(() => {
-    const originalBodyBg = document.body.style.backgroundColor;
-    const originalHtmlBg = document.documentElement.style.backgroundColor;
-    document.body.style.backgroundColor = 'transparent';
-    document.documentElement.style.backgroundColor = 'transparent';
+    document.body.classList.add('obs-overlay');
+    document.documentElement.classList.add('obs-overlay');
+    document.body.style.setProperty('background', 'transparent', 'important');
+    document.body.style.setProperty('background-color', 'transparent', 'important');
+    document.documentElement.style.setProperty('background', 'transparent', 'important');
+    document.documentElement.style.setProperty('background-color', 'transparent', 'important');
 
     return () => {
-      document.body.style.backgroundColor = originalBodyBg;
-      document.documentElement.style.backgroundColor = originalHtmlBg;
+      document.body.classList.remove('obs-overlay');
+      document.documentElement.classList.remove('obs-overlay');
+      document.body.style.background = '';
+      document.body.style.backgroundColor = '';
+      document.documentElement.style.background = '';
+      document.documentElement.style.backgroundColor = '';
     };
   }, []);
 

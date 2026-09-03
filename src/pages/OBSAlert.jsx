@@ -412,15 +412,34 @@ export default function OBSAlert() {
   const isProcessingRef = useRef(false);
   const sseRef = useRef(null);
 
-  // ── 1. Set transparent background for OBS Browser Source ──────────────────
+  // ── 1. Set 100% transparent background for OBS Browser Source ─────────────
   useEffect(() => {
-    document.body.style.backgroundColor = 'transparent';
-    document.documentElement.style.backgroundColor = 'transparent';
+    document.body.classList.add('obs-overlay');
+    document.documentElement.classList.add('obs-overlay');
+    document.body.style.setProperty('background', 'transparent', 'important');
+    document.body.style.setProperty('background-color', 'transparent', 'important');
+    document.documentElement.style.setProperty('background', 'transparent', 'important');
+    document.documentElement.style.setProperty('background-color', 'transparent', 'important');
     document.body.style.margin = '0';
     document.body.style.padding = '0';
+
+    const rootEl = document.getElementById('root');
+    if (rootEl) {
+      rootEl.style.setProperty('background', 'transparent', 'important');
+      rootEl.style.setProperty('background-color', 'transparent', 'important');
+    }
+
     return () => {
+      document.body.classList.remove('obs-overlay');
+      document.documentElement.classList.remove('obs-overlay');
+      document.body.style.background = '';
       document.body.style.backgroundColor = '';
+      document.documentElement.style.background = '';
       document.documentElement.style.backgroundColor = '';
+      if (rootEl) {
+        rootEl.style.background = '';
+        rootEl.style.backgroundColor = '';
+      }
     };
   }, []);
 

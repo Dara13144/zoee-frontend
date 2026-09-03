@@ -88,14 +88,20 @@ export default function OBSTicker() {
 
   // Enforce 100% transparent body & html for OBS Studio
   useEffect(() => {
-    const origBodyBg = document.body.style.backgroundColor;
-    const origHtmlBg = document.documentElement.style.backgroundColor;
-    document.body.style.backgroundColor = 'transparent';
-    document.documentElement.style.backgroundColor = 'transparent';
+    document.body.classList.add('obs-overlay');
+    document.documentElement.classList.add('obs-overlay');
+    document.body.style.setProperty('background', 'transparent', 'important');
+    document.body.style.setProperty('background-color', 'transparent', 'important');
+    document.documentElement.style.setProperty('background', 'transparent', 'important');
+    document.documentElement.style.setProperty('background-color', 'transparent', 'important');
 
     return () => {
-      document.body.style.backgroundColor = origBodyBg;
-      document.documentElement.style.backgroundColor = origHtmlBg;
+      document.body.classList.remove('obs-overlay');
+      document.documentElement.classList.remove('obs-overlay');
+      document.body.style.background = '';
+      document.body.style.backgroundColor = '';
+      document.documentElement.style.background = '';
+      document.documentElement.style.backgroundColor = '';
     };
   }, []);
 
