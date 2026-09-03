@@ -478,7 +478,6 @@ export default function PublicDonationPage() {
                 type="text"
                 value={donorName}
                 onChange={(e) => setDonorName(e.target.value)}
-                placeholder="e.g., HongTin"
                 maxLength={50}
                 className="w-full px-4 py-3 rounded-2xl bg-[#090d19] border border-white/10 text-xs sm:text-sm text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 transition-colors font-medium"
               />
