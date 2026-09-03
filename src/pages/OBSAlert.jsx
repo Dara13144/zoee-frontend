@@ -175,35 +175,27 @@ function AlertCard({ alertData, alertSettings, streamer, animation = 'neon', onD
     >
       <ParticleBurst active={burst} />
 
-      {/* Main Alert Card */}
+      {/* Main Alert Card - 100% Transparent Background */}
       <div
-        className="relative overflow-hidden rounded-3xl shadow-2xl"
+        className="relative overflow-hidden rounded-3xl"
         style={{
-          background: 'linear-gradient(135deg, rgba(15,12,30,0.97) 0%, rgba(30,20,60,0.97) 50%, rgba(15,12,30,0.97) 100%)',
-          border: '2px solid rgba(167,139,250,0.6)',
-          boxShadow: '0 0 60px rgba(139,92,246,0.5), 0 0 120px rgba(139,92,246,0.2), inset 0 1px 0 rgba(255,255,255,0.07)',
-          minWidth: 340,
-          maxWidth: 520
+          background: 'transparent',
+          backgroundColor: 'transparent',
+          border: 'none',
+          boxShadow: 'none',
+          minWidth: 320,
+          maxWidth: 520,
+          filter: 'drop-shadow(0 4px 20px rgba(0,0,0,0.8))'
         }}
       >
-        {/* Animated shimmer top line */}
-        <motion.div
-          className="absolute top-0 left-0 right-0 h-0.5"
-          style={{
-            background: 'linear-gradient(90deg, transparent, #a78bfa, #22d3ee, #f472b6, transparent)',
-          }}
-          animate={{ x: ['-100%', '100%'] }}
-          transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
-        />
-
         {/* Test badge */}
         {isTest && (
-          <div className="absolute top-3 right-3 px-2 py-0.5 rounded-full bg-amber-500/20 border border-amber-500/50 text-amber-300 text-[9px] font-bold uppercase tracking-widest">
+          <div className="absolute top-1 right-1 px-2 py-0.5 rounded-full bg-amber-500/30 border border-amber-400/60 text-amber-300 text-[9px] font-bold uppercase tracking-widest shadow-md">
             TEST
           </div>
         )}
 
-        <div className="p-6 space-y-4">
+        <div className="p-4 space-y-3">
           {/* Header Row: icon + badge */}
           <div className="flex items-center gap-3">
             {/* Pulsing Icon */}
@@ -283,19 +275,19 @@ function AlertCard({ alertData, alertSettings, streamer, animation = 'neon', onD
           {/* Message */}
           {alertData.message && (
             <motion.div
-              className="px-4 py-3 rounded-2xl text-sm font-medium text-slate-100 leading-relaxed"
+              className="px-4 py-2.5 rounded-2xl text-sm font-semibold text-white leading-relaxed backdrop-blur-md"
               style={{
-                background: 'rgba(255,255,255,0.05)',
-                border: '1px solid rgba(255,255,255,0.08)',
-                boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05)'
+                background: 'rgba(0, 0, 0, 0.55)',
+                border: '1px solid rgba(255, 255, 255, 0.15)',
+                boxShadow: '0 4px 20px rgba(0, 0, 0, 0.6)'
               }}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3, duration: 0.4 }}
             >
-              <span className="text-violet-400 font-black mr-1">"</span>
+              <span className="text-amber-400 font-black mr-1">"</span>
               {alertData.message}
-              <span className="text-violet-400 font-black ml-1">"</span>
+              <span className="text-amber-400 font-black ml-1">"</span>
             </motion.div>
           )}
 
@@ -601,11 +593,18 @@ export default function OBSAlert() {
 
   const animStyle = alertSettings?.animation || 'neon';
 
+  const [browserPreviewBg, setBrowserPreviewBg] = useState('transparent');
+
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
     <div
-      className="fixed inset-0 select-none overflow-hidden"
-      style={{ background: 'transparent' }}
+      className={`fixed inset-0 select-none overflow-hidden obs-overlay ${
+        !window.obsstudio && browserPreviewBg === 'dark' ? 'bg-[#090b14]' : ''
+      }`}
+      style={{
+        background: !window.obsstudio && browserPreviewBg === 'dark' ? '#090b14' : 'transparent',
+        backgroundColor: !window.obsstudio && browserPreviewBg === 'dark' ? '#090b14' : 'transparent'
+      }}
       onClick={() => {
         if (!audioUnlocked) {
           soundService.playSound('chime', 0.05);
@@ -613,22 +612,32 @@ export default function OBSAlert() {
         }
       }}
     >
-      {/* Subtle Studio Overlay Test Controls (Visible on hover in browser/OBS preview) */}
-      <div className="absolute top-4 right-4 z-50 flex items-center gap-2 opacity-0 hover:opacity-100 focus-within:opacity-100 transition-opacity duration-300 pointer-events-auto bg-black/80 backdrop-blur-md px-3 py-2 rounded-2xl border border-white/10 shadow-2xl">
-        <span className="flex items-center gap-1.5 text-[10px] font-mono text-emerald-400">
-          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-          OBS Live
-        </span>
-        <button
-          type="button"
-          onClick={handleManualTestAlert}
-          disabled={triggeringTest}
-          className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-brand-600 to-accent-fuchsia text-xs font-bold text-white shadow-md hover:scale-105 active:scale-95 transition-transform flex items-center gap-1"
-        >
-          <Sparkles className="w-3.5 h-3.5" />
-          {triggeringTest ? 'Triggering...' : 'Trigger Test Alert'}
-        </button>
-      </div>
+      {/* Studio Overlay Test Controls (Only visible in browser preview on hover, hidden in OBS Studio) */}
+      {!window.obsstudio && (
+        <div className="absolute top-4 right-4 z-50 flex items-center gap-2 opacity-0 hover:opacity-100 focus-within:opacity-100 transition-opacity duration-300 pointer-events-auto bg-black/70 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/10 shadow-lg">
+          <span className="flex items-center gap-1.5 text-[10px] font-mono text-emerald-400">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            OBS Live
+          </span>
+          <button
+            type="button"
+            onClick={() => setBrowserPreviewBg(prev => prev === 'dark' ? 'transparent' : 'dark')}
+            className="px-2 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-[10px] font-mono text-slate-300 transition-colors"
+            title="Toggle preview background for browser testing"
+          >
+            {browserPreviewBg === 'dark' ? '🌙 Dark Preview' : '✨ 100% Transparent'}
+          </button>
+          <button
+            type="button"
+            onClick={handleManualTestAlert}
+            disabled={triggeringTest}
+            className="px-3 py-1 rounded-lg bg-gradient-to-r from-brand-600 to-accent-fuchsia text-xs font-bold text-white shadow-md hover:scale-105 active:scale-95 transition-transform flex items-center gap-1"
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+            {triggeringTest ? 'Triggering...' : 'Trigger Test Alert'}
+          </button>
+        </div>
+      )}
 
       {/* Main Alert Popup Area */}
       <div className={`absolute inset-0 flex ${positionClasses} pointer-events-none`}>
