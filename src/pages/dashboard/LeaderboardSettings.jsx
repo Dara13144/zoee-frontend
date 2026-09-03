@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import api from '../../services/api';
+import React, { useState, useEffect, useRef } from 'react';
+import api, { getApiUrl } from '../../services/api';
 import {
   Trophy,
   Crown,
@@ -69,13 +69,12 @@ export default function LeaderboardSettings() {
   const [activeTab, setActiveTab] = useState('general');
 
   // Real supporters for live preview
-  const [previewSupporters, setPreviewSupporters] = useState([
-    { rank: 1, name: 'Sokha Gaming', total: 500.00, count: 18, avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100' },
-    { rank: 2, name: 'Piseth Fan', total: 250.00, count: 12, avatar: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=100' },
-    { rank: 3, name: 'Bora Pro', total: 100.00, count: 7, avatar: 'https://images.unsplash.com/photo-1527980965255-d3b416303d12?w=100' },
-    { rank: 4, name: 'Chanthy', total: 50.00, count: 4, avatar: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=100' },
-    { rank: 5, name: 'Rithy Hero', total: 25.00, count: 2, avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100' }
-  ]);
+  const [previewSupporters, setPreviewSupporters] = useState([]);
+  const [leaderboardStats, setLeaderboardStats] = useState({
+    totalAmount: 0,
+    totalCount: 0,
+    uniqueDonors: 0
+  });
 
   // All 25 Leaderboard Settings
   const [settings, setSettings] = useState({
@@ -110,30 +109,52 @@ export default function LeaderboardSettings() {
     setTimeout(() => setToast({ show: false, message: '', type: 'success' }), 3500);
   };
 
+  const loadLeaderboardData = async (slug) => {
+    if (!slug) return;
+    try {
+      const leadRes = await api.get(`/leaderboard/${slug}?period=all`).catch(() => null);
+      if (leadRes?.success && leadRes.data) {
+        if (Array.isArray(leadRes.data.rankings)) {
+          setPreviewSupporters(leadRes.data.rankings.map((r, i) => ({
+            rank: r.rank || i + 1,
+            name: r.donor_name || 'Anonymous',
+            total: Number(r.total_amount || 0),
+            count: r.donation_count || 1,
+            avatar: r.avatar_url || null
+          })));
+        }
+        if (leadRes.data.stats) {
+          setLeaderboardStats({
+            totalAmount: Number(leadRes.data.stats.totalAmount || 0),
+            totalCount: Number(leadRes.data.stats.totalCount || 0),
+            uniqueDonors: Number(leadRes.data.stats.uniqueDonors || 0)
+          });
+        }
+      }
+    } catch (err) {
+      console.warn('Leaderboard refresh error:', err);
+    }
+  };
+
   const fetchSettings = async () => {
     try {
       setLoading(true);
-      const [setRes, profRes, leadRes] = await Promise.all([
+      const [setRes, profRes] = await Promise.all([
         api.get('/leaderboard/settings').catch(() => null),
-        api.get('/streamers/dashboard/profile').catch(() => null),
-        api.get('/leaderboard/dara_gaming').catch(() => null)
+        api.get('/streamers/dashboard/profile').catch(() => null)
       ]);
+
+      let slug = 'dara_gaming';
+      if (profRes?.success && profRes.data?.slug) {
+        slug = profRes.data.slug;
+        setStreamerSlug(slug);
+      }
 
       if (setRes?.success && setRes.data) {
         setSettings(prev => ({ ...prev, ...setRes.data }));
       }
-      if (profRes?.success && profRes.data?.slug) {
-        setStreamerSlug(profRes.data.slug);
-      }
-      if (leadRes?.success && Array.isArray(leadRes.data?.rankings) && leadRes.data.rankings.length > 0) {
-        setPreviewSupporters(leadRes.data.rankings.map((r, i) => ({
-          rank: r.rank || i + 1,
-          name: r.donor_name || 'Anonymous',
-          total: Number(r.total_amount || 0),
-          count: r.donation_count || 1,
-          avatar: r.avatar_url || null
-        })));
-      }
+
+      await loadLeaderboardData(slug);
     } catch (err) {
       console.error('Failed to load leaderboard settings:', err);
     } finally {
@@ -144,6 +165,37 @@ export default function LeaderboardSettings() {
   useEffect(() => {
     fetchSettings();
   }, []);
+
+  // Real-time SSE listener + resilient 5s interval polling
+  useEffect(() => {
+    if (!streamerSlug) return;
+
+    let eventSource = null;
+    try {
+      eventSource = new EventSource(getApiUrl(`/leaderboard/stream/${streamerSlug}`));
+      eventSource.onmessage = (evt) => {
+        try {
+          const payload = JSON.parse(evt.data);
+          if (payload.type === 'LEADERBOARD_UPDATE' || payload.type === 'NEW_DONATION') {
+            loadLeaderboardData(streamerSlug);
+          }
+        } catch {
+          loadLeaderboardData(streamerSlug);
+        }
+      };
+    } catch (e) {
+      console.warn('Leaderboard SSE connect warning:', e);
+    }
+
+    const interval = setInterval(() => {
+      loadLeaderboardData(streamerSlug);
+    }, 5000);
+
+    return () => {
+      if (eventSource) eventSource.close();
+      clearInterval(interval);
+    };
+  }, [streamerSlug]);
 
   const handleSave = async (e) => {
     if (e) e.preventDefault();
@@ -855,9 +907,26 @@ export default function LeaderboardSettings() {
             <span className="text-xs font-mono text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
               <Eye className="w-3.5 h-3.5 text-accent-cyan animate-pulse" /> 25. Live Preview
             </span>
-            <span className="text-[10px] text-slate-400 font-mono">
-              Auto-Sync: <strong className="text-emerald-400">{settings.refresh_interval}</strong>
+            <span className="text-[10px] text-emerald-400 font-mono flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span>
+              Live Sync ({settings.refresh_interval})
             </span>
+          </div>
+
+          {/* Real-time Money Summary */}
+          <div className="grid grid-cols-2 gap-2 text-center">
+            <div className="p-2.5 rounded-2xl bg-amber-500/15 border border-amber-500/40 shadow-sm">
+              <span className="text-[10px] text-amber-300 uppercase font-mono font-bold block">Total Raised</span>
+              <span className="text-base font-black text-amber-400 font-mono">
+                ${Number(leaderboardStats.totalAmount || 0).toFixed(2)}
+              </span>
+            </div>
+            <div className="p-2.5 rounded-2xl bg-dark-surface border border-white/10 shadow-sm">
+              <span className="text-[10px] text-slate-400 uppercase font-mono font-bold block">Active Supporters</span>
+              <span className="text-base font-black text-white font-mono">
+                {leaderboardStats.uniqueDonors || previewSupporters.length}
+              </span>
+            </div>
           </div>
 
           {/* Styled Preview Container */}
