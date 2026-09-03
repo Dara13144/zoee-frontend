@@ -59,6 +59,7 @@ export default function App() {
             <Route path="donate/:username" element={<PublicDonationPage />} />
             <Route path="streamer/:username" element={<PublicDonationPage />} />
             <Route path="@:username" element={<PublicDonationPage />} />
+            <Route path=":username" element={<PublicDonationPage />} />
             
             {/* Real-time Public Leaderboard Avatar Pages */}
             <Route path="leaderboard-avatar/:username" element={<LeaderboardAvatar />} />

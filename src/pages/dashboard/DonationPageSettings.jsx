@@ -58,8 +58,9 @@ export default function DonationPageSettings() {
       if (setRes?.success && setRes.data) {
         setSettings(prev => ({ ...prev, ...setRes.data }));
       }
-      if (profRes?.success && profRes.data?.slug) {
-        setStreamerSlug(profRes.data.slug);
+      const resolvedSlug = profRes?.data?.slug || profRes?.data?.streamer?.slug || profRes?.data?.profile?.username;
+      if (resolvedSlug) {
+        setStreamerSlug(resolvedSlug);
       }
     } catch (err) {
       console.error('Failed to load donation page settings:', err);
@@ -108,13 +109,14 @@ export default function DonationPageSettings() {
     }
   };
 
-  const publicDonateUrl = typeof window !== 'undefined'
-    ? `${window.location.origin}/@${streamerSlug}`
-    : `https://zoeedonate.com/@${streamerSlug}`;
+  const originUrl = typeof window !== 'undefined' ? window.location.origin : 'https://zoeedonate.com';
+  const publicDonateUrl = `${originUrl}/@${streamerSlug}`;
+  const directDonateUrl = `${originUrl}/${streamerSlug}`;
 
-  const copyPublicUrl = () => {
-    navigator.clipboard.writeText(publicDonateUrl);
+  const copyPublicUrl = (urlToCopy = publicDonateUrl) => {
+    navigator.clipboard.writeText(urlToCopy);
     setCopiedUrl(true);
+    showToast('Public Donation URL copied to clipboard!', 'success');
     setTimeout(() => setCopiedUrl(false), 2000);
   };
 
@@ -148,7 +150,7 @@ export default function DonationPageSettings() {
         <div className="flex items-center gap-2 self-start sm:self-auto">
           <button
             type="button"
-            onClick={copyPublicUrl}
+            onClick={() => copyPublicUrl(publicDonateUrl)}
             className="px-4 py-2.5 rounded-xl bg-brand-500/20 hover:bg-brand-500/30 text-xs font-bold text-brand-300 border border-brand-500/40 flex items-center gap-1.5 transition-all shadow-md"
           >
             {copiedUrl ? <Check className="w-3.5 h-3.5 text-accent-emerald" /> : <Copy className="w-3.5 h-3.5" />}
@@ -188,14 +190,18 @@ export default function DonationPageSettings() {
                 Live & Active
               </span>
             </div>
-            <p className="text-xs text-brand-300 font-mono mt-0.5 break-all">{publicDonateUrl}</p>
+            <div className="flex flex-wrap items-center gap-3 mt-1">
+              <p className="text-xs text-brand-300 font-mono break-all">{publicDonateUrl}</p>
+              <span className="text-slate-500 text-[10px] hidden sm:inline">|</span>
+              <p className="text-xs text-slate-400 font-mono break-all hidden sm:inline">{directDonateUrl}</p>
+            </div>
           </div>
         </div>
 
         <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto">
           <button
             type="button"
-            onClick={copyPublicUrl}
+            onClick={() => copyPublicUrl(publicDonateUrl)}
             className="flex-1 sm:flex-none px-5 py-2.5 rounded-xl bg-gradient-to-r from-brand-600 to-accent-fuchsia hover:brightness-110 text-xs font-bold text-white flex items-center justify-center gap-2 transition-all shadow-lg font-mono"
           >
             {copiedUrl ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
