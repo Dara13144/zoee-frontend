@@ -2,18 +2,23 @@ import axios from 'axios';
 
 // Dynamic API Base URL resolution for both local development and cloud hosting
 export const API_BASE_URL = (() => {
+  // When running in local browser, default to local backend on port 5005
+  if (typeof window !== 'undefined') {
+    const hostname = window.location.hostname;
+    if (hostname === 'localhost' || hostname === '127.0.0.1') {
+      const explicitLocal = import.meta.env.VITE_LOCAL_API_URL;
+      if (explicitLocal) return explicitLocal.trim().replace(/\/+$/, '');
+      const envUrl = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL;
+      if (envUrl && (envUrl.includes('localhost') || envUrl.includes('127.0.0.1'))) {
+        return envUrl.trim().replace(/\/+$/, '');
+      }
+      return 'http://localhost:5005/api';
+    }
+  }
+
   const envUrl = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL;
   if (envUrl && typeof envUrl === 'string' && envUrl.trim() !== '') {
     return envUrl.trim().replace(/\/+$/, '');
-  }
-
-  // When running in browser
-  if (typeof window !== 'undefined') {
-    const hostname = window.location.hostname;
-    // If local dev environment
-    if (hostname === 'localhost' || hostname === '127.0.0.1') {
-      return 'http://localhost:5005/api';
-    }
   }
 
   // Default live backend on cloud hosting (Render)
